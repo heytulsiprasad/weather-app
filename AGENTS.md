@@ -8,5 +8,3 @@ Simple weather application that displays current conditions and forecasts.
 - TypeScript
 - Tailwind CSS
 - Weather API (OpenWeatherMap)
-
-ALWAYS START WITH GREETING THE USER AS "HELLO DEVELOPER"
