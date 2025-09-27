@@ -1,0 +1,178 @@
+"use client";
+
+import Image from "next/image";
+import { FormEvent, useState } from "react";
+
+type WeatherSummary = {
+  location: {
+    city: string;
+    country?: string;
+  };
+  current: {
+    temperature: number;
+    feelsLike: number;
+    description: string;
+    humidity: number;
+    windSpeed: number;
+    icon: string;
+  };
+  forecast: Array<{
+    dt: number;
+    temperature: number;
+    description: string;
+    icon: string;
+  }>;
+};
+
+const formatTemperature = (celsius: number) => ({
+  c: Math.round(celsius),
+  f: Math.round((celsius * 9) / 5 + 32),
+});
+
+const iconUrl = (iconCode: string) =>
+  `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+
+export default function WeatherApp() {
+  const [city, setCity] = useState("New York");
+  const [weather, setWeather] = useState<WeatherSummary | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmed = city.trim();
+
+    if (!trimmed) {
+      setError("Enter a city to get the forecast.");
+      setWeather(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/weather?city=${encodeURIComponent(trimmed)}`);
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error ?? "Unable to retrieve weather right now.");
+      }
+
+      const payload: WeatherSummary = await response.json();
+      setWeather(payload);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unexpected error.";
+      setError(message);
+      setWeather(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <section className="w-full rounded-3xl bg-white/80 p-6 shadow-xl backdrop-blur dark:bg-slate-900/70 sm:p-10">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4 sm:flex-row sm:items-center"
+        aria-label="Search weather by city"
+      >
+        <label className="sr-only" htmlFor="city">
+          City
+        </label>
+        <input
+          id="city"
+          name="city"
+          value={city}
+          onChange={(event) => setCity(event.target.value)}
+          placeholder="Try San Francisco, Tokyo, Paris..."
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm transition focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+        />
+        <button
+          type="submit"
+          className="flex w-full items-center justify-center rounded-2xl bg-sky-500 px-5 py-3 text-base font-semibold text-white transition hover:bg-sky-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:w-auto"
+          disabled={isLoading}
+        >
+          {isLoading ? "Loading…" : "Get weather"}
+        </button>
+      </form>
+
+      {error ? (
+        <p className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/40 dark:text-red-200">
+          {error}
+        </p>
+      ) : null}
+
+      {weather ? (
+        <div className="mt-8 space-y-8">
+          <div className="flex flex-col gap-6 rounded-3xl bg-sky-50/60 p-6 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-wide text-sky-700 dark:text-sky-200">
+                {weather.location.city}
+                {weather.location.country ? `, ${weather.location.country}` : ""}
+              </p>
+              <h2 className="mt-2 text-4xl font-semibold text-slate-900 dark:text-slate-50">
+                {formatTemperature(weather.current.temperature).c}°C
+              </h2>
+              <p className="mt-2 text-base text-slate-600 dark:text-slate-300">
+                Feels like {formatTemperature(weather.current.feelsLike).c}°C · {weather.current.description}
+              </p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {formatTemperature(weather.current.temperature).f}°F · humidity {weather.current.humidity}% · wind
+                {" "}
+                {Math.round(weather.current.windSpeed)} m/s
+              </p>
+            </div>
+            <div className="flex flex-col items-center sm:flex-row sm:gap-4">
+              <Image
+                src={iconUrl(weather.current.icon)}
+                alt={weather.current.description}
+                width={96}
+                height={96}
+                className="h-24 w-24"
+                priority
+              />
+            </div>
+          </div>
+
+          {weather.forecast.length ? (
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                Next Hours
+              </h3>
+              <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
+                {weather.forecast.map((entry) => {
+                  const temps = formatTemperature(entry.temperature);
+                  const date = new Date(entry.dt * 1000);
+
+                  return (
+                    <li
+                      key={entry.dt}
+                      className="rounded-2xl border border-slate-200 bg-white/70 p-4 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800/70"
+                    >
+                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                        {date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+                      </p>
+                      <Image
+                        src={iconUrl(entry.icon)}
+                        alt={entry.description}
+                        width={48}
+                        height={48}
+                        className="mx-auto h-12 w-12"
+                      />
+                      <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
+                        {temps.c}°C
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{temps.f}°F</p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{entry.description}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
+  );
+}
