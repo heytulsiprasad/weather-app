@@ -11,7 +11,7 @@
 ### Dark-mode toggling patterns
 
 - Tailwind’s docs recommend toggling the `dark` class on `<html>` and storing the user’s preference in `localStorage`. A three-way toggle should support **light**, **dark** and **system** preferences and use `window.matchMedia` to detect the system theme ([Tailwind docs](https://tailwindcss.com)).
-- A practical example shows how to read the saved theme on mount, add or remove the `dark` class, and save the choice in `localStorage`. The `toggleTheme()` function checks whether the `dark` class is present and updates it, saving `'light'` or `'dark'` accordingly ([Prismic tutorial](https://prismic.io)). Another example extends this to a three-option selector (light/dark/system) and listens for system theme changes with `matchMedia()`:contentReference[oaicite:0]{index=0}.
+- A practical example shows how to read the saved theme on mount, add or remove the `dark` class, and save the choice in `localStorage`. The `toggleTheme()` function checks whether the `dark` class is present and updates it, saving `'light'` or `'dark'` accordingly ([Prismic tutorial](https://prismic.io)). Another example extends this to a three-option selector (light/dark/system) and listens for system theme changes with `matchMedia()`.
 
 ---
 
