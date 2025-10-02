@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 type ThemeMode = 'light' | 'dark' | 'system';
-type AccentColor = 'blue' | 'green' | 'rose' | 'amber' | 'violet';
+type AccentColor = 'blue' | 'green' | 'rose' | 'amber' | 'violet' | 'pink';
 
 interface ThemeContextType {
   mode: ThemeMode;
@@ -77,7 +77,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-blue', 'theme-green', 'theme-rose', 'theme-amber', 'theme-violet');
+    root.classList.remove('theme-blue', 'theme-green', 'theme-rose', 'theme-amber', 'theme-violet', 'theme-pink');
 
     // Add the selected theme class (skip for blue as it's the default)
     if (accentColor !== 'blue') {

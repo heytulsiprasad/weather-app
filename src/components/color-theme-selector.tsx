@@ -8,6 +8,7 @@ const colors = [
   { name: 'rose', label: 'Rose', class: 'bg-rose-500' },
   { name: 'amber', label: 'Amber', class: 'bg-amber-500' },
   { name: 'violet', label: 'Violet', class: 'bg-violet-500' },
+  { name: 'pink', label: 'Pink', class: 'bg-pink-500' },
 ] as const;
 
 export function ColorThemeSelector() {
