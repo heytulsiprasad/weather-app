@@ -86,11 +86,11 @@ export default function WeatherApp() {
           value={city}
           onChange={(event) => setCity(event.target.value)}
           placeholder="Try San Francisco, Tokyo, Paris..."
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm transition focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         />
         <button
           type="submit"
-          className="flex w-full items-center justify-center rounded-2xl bg-sky-500 px-5 py-3 text-base font-semibold text-white transition hover:bg-sky-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 sm:w-auto"
+          className="flex w-full items-center justify-center rounded-2xl bg-primary px-5 py-3 text-base font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto"
           disabled={isLoading}
         >
           {isLoading ? "Loading…" : "Get weather"}
@@ -105,9 +105,9 @@ export default function WeatherApp() {
 
       {weather ? (
         <div className="mt-8 space-y-8">
-          <div className="flex flex-col gap-6 rounded-3xl bg-sky-50/60 p-6 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-6 rounded-3xl bg-primary-light/60 p-6 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-wide text-sky-700 dark:text-sky-200">
+              <p className="text-sm uppercase tracking-wide text-primary-dark dark:text-primary-light">
                 {weather.location.city}
                 {weather.location.country ? `, ${weather.location.country}` : ""}
               </p>
