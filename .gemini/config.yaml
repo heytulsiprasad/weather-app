@@ -1,0 +1,42 @@
+# Gemini Code Assist configuration for Sensiplan Next.js project
+# Automated PR review configuration with focus on Next.js, Sanity CMS, and Tailwind CSS
+
+# Enable creative PR summaries
+have_fun: true
+
+# Global ignore patterns for files Gemini should skip
+ignore_patterns:
+  - 'node_modules/**'
+  - '.next/**'
+  - 'out/**'
+  - 'dist/**'
+  - 'build/**'
+  - 'coverage/**'
+  - '*.min.js'
+  - '*.min.css'
+  - 'pnpm-lock.yaml'
+  - '.env*.local'
+  - '*.log'
+  - '.sanity/**'
+
+# Code review configuration
+code_review:
+  # Enable code reviews
+  disable: false
+
+  # Show all comments including LOW severity for comprehensive feedback
+  comment_severity_threshold: LOW
+
+  # No limit on review comments
+  max_review_comments: -1
+
+  # Configuration for when PRs are opened
+  pull_request_opened:
+    # Show help message on PR open
+    help: false
+
+    # Post a PR summary
+    summary: true
+
+    # Perform code review automatically
+    code_review: true
