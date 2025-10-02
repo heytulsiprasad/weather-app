@@ -1,8 +1,39 @@
 @import "tailwindcss";
+/* Enable class-driven dark mode in Tailwind CSS v4 */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Default theme: Blue */
+  --color-primary: 14 165 233; /* sky-500 */
+  --color-primary-light: 240 249 255; /* sky-50 */
+  --color-primary-dark: 3 105 161; /* sky-700 */
+}
+
+:root.theme-green {
+  --color-primary: 34 197 94; /* green-500 */
+  --color-primary-light: 240 253 244; /* green-50 */
+  --color-primary-dark: 21 128 61; /* green-700 */
+}
+
+:root.theme-rose {
+  --color-primary: 244 63 94; /* rose-500 */
+  --color-primary-light: 255 241 242; /* rose-50 */
+  --color-primary-dark: 190 18 60; /* rose-700 */
+}
+
+:root.theme-amber {
+  --color-primary: 245 158 11; /* amber-500 */
+  --color-primary-light: 255 251 235; /* amber-50 */
+  --color-primary-dark: 180 83 9; /* amber-700 */
+}
+
+:root.theme-violet {
+  --color-primary: 139 92 246; /* violet-500 */
+  --color-primary-light: 245 243 255; /* violet-50 */
+  --color-primary-dark: 109 40 217; /* violet-700 */
 }
 
 @theme inline {
@@ -10,10 +41,23 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-primary: var(--color-primary);
+  --color-primary-light: var(--color-primary-light);
+  --color-primary-dark: var(--color-primary-dark);
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+.light {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.light):not(.dark) {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
