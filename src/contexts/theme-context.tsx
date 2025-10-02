@@ -10,7 +10,7 @@ interface ThemeContextType {
   accentColor: AccentColor;
   setMode: (mode: ThemeMode) => void;
   setAccentColor: (color: AccentColor) => void;
-  effectiveTheme: 'light' | 'dark';
+  mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -18,7 +18,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>('system');
   const [accentColor, setAccentColorState] = useState<AccentColor>('blue');
-  const [effectiveTheme, setEffectiveTheme] = useState<'light' | 'dark'>('light');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     // Read from localStorage on mount
@@ -27,14 +27,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
     if (savedMode) setModeState(savedMode);
     if (savedColor) setAccentColorState(savedColor);
+
+    setMounted(true);
   }, []);
 
   useEffect(() => {
     const root = document.documentElement;
 
     const applyTheme = (theme: 'light' | 'dark') => {
-      setEffectiveTheme(theme);
-
       if (theme === 'dark') {
         root.classList.add('dark');
         root.classList.remove('light');
@@ -96,7 +96,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ThemeContext.Provider value={{ mode, accentColor, setMode, setAccentColor, effectiveTheme }}>
+    <ThemeContext.Provider value={{ mode, accentColor, setMode, setAccentColor, mounted }}>
       {children}
     </ThemeContext.Provider>
   );
