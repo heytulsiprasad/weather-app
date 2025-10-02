@@ -12,7 +12,7 @@ export default function Home() {
               Weather App
             </span>
             <h1 className="mt-6 text-4xl font-semibold text-slate-900 dark:text-slate-50 sm:text-5xl">
-              Check conditions anywhere in seconds
+              Instant weather
             </h1>
             <p className="mt-4 max-w-2xl text-base text-slate-600 dark:text-slate-300">
               Search any city worldwide to see the current temperature, feel-like conditions, humidity, wind, and a quick look at the next few hours. Powered by OpenWeatherMap.
