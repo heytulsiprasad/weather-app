@@ -22,7 +22,7 @@ jobs:
         run: npm install -g @google/gemini-cli
 
       - name: Install nanobanana extension
-        run: gemini extensions install https://github.com/gemini-cli-extensions/nanobanana --reinstall
+        run: gemini extensions install https://github.com/gemini-cli-extensions/nanobanana
 
       - name: Generate USP Chart
         id: generate_image
