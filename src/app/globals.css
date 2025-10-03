@@ -36,6 +36,13 @@
   --color-primary-dark: 109 40 217; /* violet-700 */
 }
 
+/* New Pink theme */
+:root.theme-pink {
+  --color-primary: 236 72 153; /* pink-500 */
+  --color-primary-light: 253 242 248; /* pink-50 */
+  --color-primary-dark: 190 24 93; /* pink-700 */
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
