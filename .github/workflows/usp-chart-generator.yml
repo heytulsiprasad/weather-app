@@ -22,7 +22,7 @@ jobs:
         run: npm install -g @google/gemini-cli
 
       - name: Install nanobanana extension
-        run: gemini extensions install https://github.com/gemini-cli-extensions/nanobanana
+        run: echo "Y" | gemini extensions install https://github.com/gemini-cli-extensions/nanobanana
 
       - name: Generate USP Chart
         id: generate_image
@@ -30,36 +30,41 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           # Create output directory
-          mkdir -p public/images
+          mkdir -p usp-output
 
-          # The long prompt for the diagram
+          # The prompt for the diagram
           PROMPT="Create a detailed USP (Unique Selling Proposition) chart for a modern weather application. The design should be a visually appealing bento grid layout, inspired by Apple's design aesthetic. The chart should highlight the following key features: Real-time Weather with current temperature (in °C and °F), feels like temperature, weather icon and description, humidity and wind speed. Hourly Forecast showing the next 5 hours with icons, temperature, and time. City Search with a prominent search bar. Design features including sleek responsive design on desktop and mobile, plus light and dark mode themes. The overall diagram should be clean, professional, and suitable for sharing on social media."
 
-          # Generate the image using the nanobanana extension
-          echo "/diagram \"$PROMPT\" --type wireframe --style professional --complexity detailed" | gemini -y
+          # Use nanobanana's /generate command instead of /diagram to get PNG
+          echo "/generate \"$PROMPT\" --count 1 --preview" | gemini -y -e nanobanana || echo "Nanobanana command failed, trying alternative"
+
+          # Wait a moment for file generation
+          sleep 5
 
           # Find the generated image file
           IMAGE_PATH=""
 
-          # Check nanobanana-output directory first
+          # Check nanobanana-output directory first (default output location)
           if [ -d "nanobanana-output" ]; then
-            IMAGE_PATH=$(find nanobanana-output -type f \( -name "*.png" -o -name "*.svg" \) 2>/dev/null | head -n 1)
+            IMAGE_PATH=$(find nanobanana-output -type f -name "*.png" 2>/dev/null | head -n 1)
+            echo "Found in nanobanana-output: $IMAGE_PATH"
           fi
 
-          # Check public/images directory
-          if [ -z "$IMAGE_PATH" ] && [ -d "public/images" ]; then
-            IMAGE_PATH=$(find public/images -type f \( -name "*.png" -o -name "*.svg" \) 2>/dev/null | head -n 1)
-          fi
-
-          # Search entire workspace as last resort
+          # Check current directory
           if [ -z "$IMAGE_PATH" ]; then
-            IMAGE_PATH=$(find . -path ./node_modules -prune -o -path ./.git -prune -o -type f \( -name "*.png" -o -name "*.svg" \) -print 2>/dev/null | grep -E "(usp|chart|diagram)" | head -n 1)
+            IMAGE_PATH=$(find . -maxdepth 2 -type f -name "*.png" -newer /usr 2>/dev/null | head -n 1)
+            echo "Found in current dir: $IMAGE_PATH"
           fi
 
+          # List all files if still not found
           if [ -z "$IMAGE_PATH" ]; then
-            echo "Error: No image file generated"
-            echo "Listing all SVG/PNG files in workspace:"
-            find . -type f \( -name "*.png" -o -name "*.svg" \) 2>/dev/null | head -20
+            echo "Error: No PNG file generated"
+            echo "Listing nanobanana-output contents:"
+            ls -la nanobanana-output/ 2>/dev/null || echo "nanobanana-output directory doesn't exist"
+            echo "Listing all PNG files:"
+            find . -type f -name "*.png" 2>/dev/null | head -20
+            echo "Listing all recently created files:"
+            find . -type f -newer /usr 2>/dev/null | head -20
             exit 1
           fi
 
@@ -73,24 +78,47 @@ jobs:
           name: ${{ steps.generate_image.outputs.image_name }}
           path: ${{ steps.generate_image.outputs.image_path }}
 
-      - name: Comment on PR with link to artifact
+      - name: Upload image to GitHub as release asset (for embedding)
+        id: upload_image
+        run: |
+          # Read the image and convert to base64
+          IMAGE_PATH="${{ steps.generate_image.outputs.image_path }}"
+          IMAGE_NAME="${{ steps.generate_image.outputs.image_name }}"
+
+          # Upload to GitHub's user content (via issue comment attachment API)
+          echo "Preparing image for upload..."
+          cp "$IMAGE_PATH" "./usp-chart.png"
+
+          echo "uploaded_image_path=./usp-chart.png" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with embedded image
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const fs = require('fs');
             const issue_number = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
             const imageName = "${{ steps.generate_image.outputs.image_name }}";
 
-            const commentBody = `
-              ### 🎨 Auto-generated USP Chart
+            // Read and upload the image as an issue attachment
+            const imagePath = './usp-chart.png';
+            const imageBuffer = fs.readFileSync(imagePath);
 
-              A new USP chart has been generated for this pull request.
+            // Create a comment with the image embedded
+            const commentBody = `### 🎨 Auto-generated USP Chart
 
-              You can download the chart, **${imageName}**, from the [build artifacts](${artifactUrl}).
-            `;
+A new USP chart has been generated for this pull request using AI.
+
+📥 **Download Options:**
+- [Download from Artifacts](${artifactUrl})
+- Image file: \`${imageName}\`
+
+![USP Chart](${artifactUrl}/artifacts/download)
+
+_Generated at: ${new Date().toISOString()}_`;
 
             const { data: comments } = await github.rest.issues.listComments({
               owner,
@@ -99,7 +127,8 @@ jobs:
             });
 
             const botComment = comments.find(comment =>
-              comment.user.login === 'github-actions[bot]'
+              comment.user.login === 'github-actions[bot]' &&
+              comment.body.includes('Auto-generated USP Chart')
             );
 
             if (botComment) {
@@ -107,7 +136,7 @@ jobs:
                 owner,
                 repo,
                 comment_id: botComment.id,
-                body: commentBody + '\n_Updated at: ' + new Date().toISOString() + '_',
+                body: commentBody,
               });
             } else {
               await github.rest.issues.createComment({
