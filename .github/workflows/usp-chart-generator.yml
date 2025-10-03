@@ -1,0 +1,112 @@
+name: Generate and Attach USP Chart
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  build-and-comment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # Needed to comment on the PR
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Gemini CLI
+        run: npm install -g @google/gemini-cli
+
+      - name: Install nanobanana extension
+        run: gemini extensions install https://github.com/gemini-cli-extensions/nanobanana --reinstall
+
+      - name: Generate USP Chart
+        id: generate_image
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          # The long prompt for the diagram
+          PROMPT="Create a detailed USP (Unique Selling Proposition) chart for a modern weather application. The design should be a visually appealing bento grid layout, inspired by Apple's design aesthetic. The chart should highlight the following key features:
+
+          *   **Main Feature: Real-time Weather**
+              *   Display current temperature (in °C and °F).
+              *   Show 'feels like' temperature.
+              *   Include a clear weather icon and description (e.g., 'Sunny', 'Cloudy').
+              *   Show humidity and wind speed.
+
+          *   **Secondary Feature: Hourly Forecast**
+              *   A grid showing the next 5 hours of weather.
+              *   Each hour should have a weather icon, temperature, and time.
+
+          *   **Core Functionality: City Search**
+              *   A prominent search bar to find any city worldwide.
+
+          *   **Design & UX Features:**
+              *   **Sleek, Responsive Design:** A small visual showing the app on a desktop and mobile screen.
+              *   **Light & Dark Mode:** A toggle or side-by-side comparison of the two themes.
+
+          The overall diagram should be clean, professional, and suitable for sharing on social media to attract users."
+
+          # Generate the image using the nanobanana CLI extension
+          gemini nanobanana diagram --prompt "$PROMPT" --type "wireframe" --style "professional" --complexity "detailed"
+
+          # Find the generated image file and set it as an output
+          IMAGE_PATH=$(find nanobanana-output -type f -name "*.png" | head -n 1)
+          echo "Image generated at: $IMAGE_PATH"
+          echo "::set-output name=image_path::$IMAGE_PATH"
+          echo "::set-output name=image_name::$(basename $IMAGE_PATH)"
+
+      - name: Upload image as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.generate_image.outputs.image_name }}
+          path: ${{ steps.generate_image.outputs.image_path }}
+
+      - name: Comment on PR with link to artifact
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const imageName = "${{ steps.generate_image.outputs.image_name }}";
+
+            const commentBody = `
+              ### 🎨 Auto-generated USP Chart
+
+              A new USP chart has been generated for this pull request.
+
+              You can download the chart, **${imageName}**, from the [build artifacts](${artifactUrl}).
+            `;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.login === 'github-actions[bot]'
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body: commentBody + '\n_Updated at: ' + new Date().toISOString() + '_',
+              });
+            } else {
+              await github.rest.issues.createComment({
+                issue_number,
+                owner,
+                repo,
+                body: commentBody,
+              });
+            }
