@@ -30,35 +30,16 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           # The long prompt for the diagram
-          PROMPT="Create a detailed USP (Unique Selling Proposition) chart for a modern weather application. The design should be a visually appealing bento grid layout, inspired by Apple's design aesthetic. The chart should highlight the following key features:
+          PROMPT="Create a detailed USP (Unique Selling Proposition) chart for a modern weather application. The design should be a visually appealing bento grid layout, inspired by Apple's design aesthetic. The chart should highlight the following key features: Real-time Weather with current temperature (in °C and °F), feels like temperature, weather icon and description, humidity and wind speed. Hourly Forecast showing the next 5 hours with icons, temperature, and time. City Search with a prominent search bar. Design features including sleek responsive design on desktop and mobile, plus light and dark mode themes. The overall diagram should be clean, professional, and suitable for sharing on social media."
 
-          *   **Main Feature: Real-time Weather**
-              *   Display current temperature (in °C and °F).
-              *   Show 'feels like' temperature.
-              *   Include a clear weather icon and description (e.g., 'Sunny', 'Cloudy').
-              *   Show humidity and wind speed.
-
-          *   **Secondary Feature: Hourly Forecast**
-              *   A grid showing the next 5 hours of weather.
-              *   Each hour should have a weather icon, temperature, and time.
-
-          *   **Core Functionality: City Search**
-              *   A prominent search bar to find any city worldwide.
-
-          *   **Design & UX Features:**
-              *   **Sleek, Responsive Design:** A small visual showing the app on a desktop and mobile screen.
-              *   **Light & Dark Mode:** A toggle or side-by-side comparison of the two themes.
-
-          The overall diagram should be clean, professional, and suitable for sharing on social media to attract users."
-
-          # Generate the image using the nanobanana CLI extension
-          gemini nanobanana diagram --prompt "$PROMPT" --type "wireframe" --style "professional" --complexity "detailed"
+          # Generate the image using the nanobanana extension
+          echo "/diagram \"$PROMPT\" --type wireframe --style professional --complexity detailed" | gemini -y
 
           # Find the generated image file and set it as an output
           IMAGE_PATH=$(find nanobanana-output -type f -name "*.png" | head -n 1)
           echo "Image generated at: $IMAGE_PATH"
-          echo "::set-output name=image_path::$IMAGE_PATH"
-          echo "::set-output name=image_name::$(basename $IMAGE_PATH)"
+          echo "image_path=$IMAGE_PATH" >> $GITHUB_OUTPUT
+          echo "image_name=$(basename $IMAGE_PATH)" >> $GITHUB_OUTPUT
 
       - name: Upload image as artifact
         uses: actions/upload-artifact@v4
