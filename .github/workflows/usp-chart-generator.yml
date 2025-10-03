@@ -29,24 +29,37 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
+          # Create output directory
+          mkdir -p public/images
+
           # The long prompt for the diagram
           PROMPT="Create a detailed USP (Unique Selling Proposition) chart for a modern weather application. The design should be a visually appealing bento grid layout, inspired by Apple's design aesthetic. The chart should highlight the following key features: Real-time Weather with current temperature (in °C and °F), feels like temperature, weather icon and description, humidity and wind speed. Hourly Forecast showing the next 5 hours with icons, temperature, and time. City Search with a prominent search bar. Design features including sleek responsive design on desktop and mobile, plus light and dark mode themes. The overall diagram should be clean, professional, and suitable for sharing on social media."
 
           # Generate the image using the nanobanana extension
           echo "/diagram \"$PROMPT\" --type wireframe --style professional --complexity detailed" | gemini -y
 
-          # Find the generated image file (check multiple possible locations)
+          # Find the generated image file
           IMAGE_PATH=""
+
+          # Check nanobanana-output directory first
           if [ -d "nanobanana-output" ]; then
-            IMAGE_PATH=$(find nanobanana-output -type f \( -name "*.png" -o -name "*.svg" \) | head -n 1)
+            IMAGE_PATH=$(find nanobanana-output -type f \( -name "*.png" -o -name "*.svg" \) 2>/dev/null | head -n 1)
           fi
 
+          # Check public/images directory
+          if [ -z "$IMAGE_PATH" ] && [ -d "public/images" ]; then
+            IMAGE_PATH=$(find public/images -type f \( -name "*.png" -o -name "*.svg" \) 2>/dev/null | head -n 1)
+          fi
+
+          # Search entire workspace as last resort
           if [ -z "$IMAGE_PATH" ]; then
-            IMAGE_PATH=$(find . -type f \( -name "*.png" -o -name "*.svg" \) -newer /tmp -print | head -n 1)
+            IMAGE_PATH=$(find . -path ./node_modules -prune -o -path ./.git -prune -o -type f \( -name "*.png" -o -name "*.svg" \) -print 2>/dev/null | grep -E "(usp|chart|diagram)" | head -n 1)
           fi
 
           if [ -z "$IMAGE_PATH" ]; then
             echo "Error: No image file generated"
+            echo "Listing all SVG/PNG files in workspace:"
+            find . -type f \( -name "*.png" -o -name "*.svg" \) 2>/dev/null | head -20
             exit 1
           fi
 
