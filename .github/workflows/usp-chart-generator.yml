@@ -35,8 +35,21 @@ jobs:
           # Generate the image using the nanobanana extension
           echo "/diagram \"$PROMPT\" --type wireframe --style professional --complexity detailed" | gemini -y
 
-          # Find the generated image file and set it as an output
-          IMAGE_PATH=$(find nanobanana-output -type f -name "*.png" | head -n 1)
+          # Find the generated image file (check multiple possible locations)
+          IMAGE_PATH=""
+          if [ -d "nanobanana-output" ]; then
+            IMAGE_PATH=$(find nanobanana-output -type f \( -name "*.png" -o -name "*.svg" \) | head -n 1)
+          fi
+
+          if [ -z "$IMAGE_PATH" ]; then
+            IMAGE_PATH=$(find . -type f \( -name "*.png" -o -name "*.svg" \) -newer /tmp -print | head -n 1)
+          fi
+
+          if [ -z "$IMAGE_PATH" ]; then
+            echo "Error: No image file generated"
+            exit 1
+          fi
+
           echo "Image generated at: $IMAGE_PATH"
           echo "image_path=$IMAGE_PATH" >> $GITHUB_OUTPUT
           echo "image_name=$(basename $IMAGE_PATH)" >> $GITHUB_OUTPUT
