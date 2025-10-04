@@ -8,6 +8,7 @@ jobs:
   build-and-comment:
     runs-on: ubuntu-latest
     permissions:
+      contents: write # Needed to push hosted assets for previews
       pull-requests: write # Needed to comment on the PR
     steps:
       - name: Checkout code
@@ -78,18 +79,79 @@ jobs:
           name: ${{ steps.generate_image.outputs.image_name }}
           path: ${{ steps.generate_image.outputs.image_path }}
 
-      - name: Upload image to GitHub as release asset (for embedding)
-        id: upload_image
+      - name: Publish USP chart for sharing
+        id: publish_image
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          IMAGE_PATH: ${{ steps.generate_image.outputs.image_path }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          REPO: ${{ github.repository }}
         run: |
-          # Read the image and convert to base64
-          IMAGE_PATH="${{ steps.generate_image.outputs.image_path }}"
-          IMAGE_NAME="${{ steps.generate_image.outputs.image_name }}"
+          set -euo pipefail
 
-          # Upload to GitHub's user content (via issue comment attachment API)
-          echo "Preparing image for upload..."
-          cp "$IMAGE_PATH" "./usp-chart.png"
+          if [ ! -f "$IMAGE_PATH" ]; then
+            echo "Unable to find generated image at $IMAGE_PATH" >&2
+            exit 1
+          fi
 
-          echo "uploaded_image_path=./usp-chart.png" >> $GITHUB_OUTPUT
+          WORKTREE=$(mktemp -d)
+          trap 'rm -rf "$WORKTREE"' EXIT
+
+          git config --global --add safe.directory "$WORKTREE"
+
+          pushd "$WORKTREE" >/dev/null
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
+          git remote add origin "$REMOTE_URL"
+
+          BRANCH="usp-assets"
+          if git ls-remote --heads origin "$BRANCH" >/dev/null 2>&1; then
+            git fetch --depth=1 origin "$BRANCH"
+            git checkout -b "$BRANCH" "origin/$BRANCH"
+          else
+            git checkout --orphan "$BRANCH"
+          fi
+
+          DEST_DIR="pr-${PR_NUMBER}"
+          mkdir -p "$DEST_DIR"
+
+          FILE_BASENAME="usp-chart-run-${RUN_ID}-attempt-${RUN_ATTEMPT}.png"
+          cp "$GITHUB_WORKSPACE/$IMAGE_PATH" "$DEST_DIR/$FILE_BASENAME"
+
+          EXISTING=$(ls -1t "$DEST_DIR"/usp-chart-run-*.png 2>/dev/null || true)
+          if [ -n "$EXISTING" ]; then
+            echo "$EXISTING" | tail -n +6 | xargs -r rm --
+          fi
+
+          git add "$DEST_DIR"
+          if git diff --cached --quiet; then
+            echo "public_url=https://raw.githubusercontent.com/${REPO}/${BRANCH}/${DEST_DIR}/${FILE_BASENAME}" >> "$GITHUB_OUTPUT"
+            popd >/dev/null
+            exit 0
+          fi
+
+          git commit -m "Add USP chart for PR #${PR_NUMBER} (run ${RUN_ID})" >/dev/null
+
+          for attempt in 1 2 3; do
+            if git push origin "$BRANCH" >/dev/null 2>&1; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Failed to push hosted chart after 3 attempts" >&2
+              exit 1
+            fi
+            git fetch origin "$BRANCH"
+            git rebase origin/"$BRANCH"
+          done
+
+          echo "public_url=https://raw.githubusercontent.com/${REPO}/${BRANCH}/${DEST_DIR}/${FILE_BASENAME}" >> "$GITHUB_OUTPUT"
+          popd >/dev/null
 
       - name: Comment on PR with embedded image
         uses: actions/github-script@v6
@@ -97,38 +159,85 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
-            const issue_number = context.issue.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const path = require('path');
+
+            const issueNumber = context.issue.number;
+            const { owner, repo } = context.repo;
+            const runId = context.runId;
+
             const imageName = "${{ steps.generate_image.outputs.image_name }}";
+            const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+            const imagePath = path.resolve('${{ steps.generate_image.outputs.image_path }}');
+            const shareableImageUrl = "${{ steps.publish_image.outputs.public_url }}";
 
-            // Read and upload the image as an issue attachment
-            const imagePath = './usp-chart.png';
-            const imageBuffer = fs.readFileSync(imagePath);
+            let artifactDownloadUrl = `${artifactUrl}/artifacts/download`;
+            try {
+              const { data: artifactsResponse } = await github.rest.actions.listWorkflowRunArtifacts({
+                owner,
+                repo,
+                run_id: runId,
+                per_page: 100,
+              });
 
-            // Create a comment with the image embedded
-            const commentBody = `### 🎨 Auto-generated USP Chart
+              const matchingArtifact = artifactsResponse.artifacts?.find(
+                (artifact) => artifact.name === imageName
+              );
 
-A new USP chart has been generated for this pull request using AI.
+              if (matchingArtifact?.id) {
+                artifactDownloadUrl = `${artifactUrl}/artifacts/${matchingArtifact.id}`;
+              }
+            } catch (error) {
+              console.warn('Unable to build dedicated artifact URL', error);
+            }
 
-📥 **Download Options:**
-- [Download from Artifacts](${artifactUrl})
-- Image file: \`${imageName}\`
+            if (!fs.existsSync(imagePath)) {
+              throw new Error(`Expected image at ${imagePath}, but it was not found.`);
+            }
 
-![USP Chart](${artifactUrl}/artifacts/download)
+            const hasHostedImage = Boolean(shareableImageUrl && shareableImageUrl.trim().length);
 
-_Generated at: ${new Date().toISOString()}_`;
+            const commentLines = [
+              '### 🎨 Auto-generated USP Chart',
+              '',
+              'A new USP chart has been generated for this pull request using AI.',
+              '',
+              '📥 **Download Options:**',
+            ];
+
+            if (hasHostedImage) {
+              commentLines.push(`- [Open hosted image](${shareableImageUrl})`);
+            } else {
+              commentLines.push('- Hosted image: unavailable (fork PR or publish failure).');
+            }
+
+            commentLines.push(
+              `- [Download from workflow artifacts](${artifactDownloadUrl})`,
+              `- Image file: \`${imageName}\``,
+              '',
+            );
+
+            if (hasHostedImage) {
+              commentLines.push(`![USP Chart](${shareableImageUrl})`);
+            } else {
+              commentLines.push('_Preview unavailable — hosted image publishing skipped (requires same-repo PR)._');
+            }
+
+            commentLines.push(
+              '',
+              `_Generated at: ${new Date().toISOString()}_`,
+            );
+
+            const commentBody = commentLines.join('\n');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
-              issue_number,
+              issue_number: issueNumber,
             });
 
             const botComment = comments.find(comment =>
-              comment.user.login === 'github-actions[bot]' &&
-              comment.body.includes('Auto-generated USP Chart')
+              comment.user?.login === 'github-actions[bot]' &&
+              comment.body?.includes('Auto-generated USP Chart')
             );
 
             if (botComment) {
@@ -140,10 +249,9 @@ _Generated at: ${new Date().toISOString()}_`;
               });
             } else {
               await github.rest.issues.createComment({
-                issue_number,
+                issue_number: issueNumber,
                 owner,
                 repo,
                 body: commentBody,
               });
             }
-
