@@ -8,6 +8,7 @@ jobs:
   build-and-comment:
     runs-on: ubuntu-latest
     permissions:
+      contents: write # Needed to push hosted assets for previews
       pull-requests: write # Needed to comment on the PR
     steps:
       - name: Checkout code
@@ -22,77 +23,275 @@ jobs:
         run: npm install -g @google/gemini-cli
 
       - name: Install nanobanana extension
-        run: gemini extensions install https://github.com/gemini-cli-extensions/nanobanana --reinstall
+        run: echo "Y" | gemini extensions install https://github.com/gemini-cli-extensions/nanobanana
 
       - name: Generate USP Chart
         id: generate_image
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ', ') }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
-          # The long prompt for the diagram
-          PROMPT="Create a detailed USP (Unique Selling Proposition) chart for a modern weather application. The design should be a visually appealing bento grid layout, inspired by Apple's design aesthetic. The chart should highlight the following key features:
+          # Create output directory
+          mkdir -p usp-output
 
-          *   **Main Feature: Real-time Weather**
-              *   Display current temperature (in °C and °F).
-              *   Show 'feels like' temperature.
-              *   Include a clear weather icon and description (e.g., 'Sunny', 'Cloudy').
-              *   Show humidity and wind speed.
+          # Build a PR-aware creative brief for the image generation prompt
+          PROMPT_FILE="usp-output/pr-brief.txt"
+          {
+            echo "Create a detailed USP (Unique Selling Proposition) chart for the specific changes delivered in this pull request."
+            echo "Use a visually appealing bento grid inspired by Apple's design language."
+            echo
+            echo "Pull Request Title: ${PR_TITLE:-Untitled PR}";
+            echo "Source Branch: ${PR_HEAD_REF:-unknown} (into ${PR_BASE_REF:-unknown target})";
+            if [ -n "${PR_LABELS}" ]; then
+              echo "Labels: ${PR_LABELS}";
+            else
+              echo "Labels: none";
+            fi
+            echo
+            echo "Pull Request Summary:";
+            if [ -n "${PR_BODY}" ]; then
+              printf '%s\n' "${PR_BODY}";
+            else
+              echo "No description provided.";
+            fi
+            echo
+            echo "Design Requirements:";
+            echo "- Emphasize only what's new or changed in this pull request (consider the title, labels, and summary).";
+            echo "- Showcase 3-6 key callouts, each with a concise headline and supporting detail.";
+            echo "- Include one panel that highlights business/user impact or why the change matters.";
+            echo "- Maintain a polished layout suitable for sharing on social media announcements.";
+            echo "- Present temperatures in both °C and °F if weather data appears.";
+          } > "$PROMPT_FILE"
 
-          *   **Secondary Feature: Hourly Forecast**
-              *   A grid showing the next 5 hours of weather.
-              *   Each hour should have a weather icon, temperature, and time.
+          PROMPT=$(cat "$PROMPT_FILE")
 
-          *   **Core Functionality: City Search**
-              *   A prominent search bar to find any city worldwide.
+          # Use nanobanana's /generate command instead of /diagram to get PNG
+          echo "/generate \"$PROMPT\" --count 1 --preview" | gemini -y -e nanobanana || echo "Nanobanana command failed, trying alternative"
 
-          *   **Design & UX Features:**
-              *   **Sleek, Responsive Design:** A small visual showing the app on a desktop and mobile screen.
-              *   **Light & Dark Mode:** A toggle or side-by-side comparison of the two themes.
+          # Wait a moment for file generation
+          sleep 5
 
-          The overall diagram should be clean, professional, and suitable for sharing on social media to attract users."
+          # Find the generated image file
+          IMAGE_PATH=""
 
-          # Generate the image using the nanobanana CLI extension
-          gemini nanobanana diagram --prompt "$PROMPT" --type "wireframe" --style "professional" --complexity "detailed"
+          # Check nanobanana-output directory first (default output location)
+          if [ -d "nanobanana-output" ]; then
+            IMAGE_PATH=$(find nanobanana-output -type f -name "*.png" 2>/dev/null | head -n 1)
+            echo "Found in nanobanana-output: $IMAGE_PATH"
+          fi
 
-          # Find the generated image file and set it as an output
-          IMAGE_PATH=$(find nanobanana-output -type f -name "*.png" | head -n 1)
+          # Check current directory
+          if [ -z "$IMAGE_PATH" ]; then
+            IMAGE_PATH=$(find . -maxdepth 2 -type f -name "*.png" -newer /usr 2>/dev/null | head -n 1)
+            echo "Found in current dir: $IMAGE_PATH"
+          fi
+
+          # List all files if still not found
+          if [ -z "$IMAGE_PATH" ]; then
+            echo "Error: No PNG file generated"
+            echo "Listing nanobanana-output contents:"
+            ls -la nanobanana-output/ 2>/dev/null || echo "nanobanana-output directory doesn't exist"
+            echo "Listing all PNG files:"
+            find . -type f -name "*.png" 2>/dev/null | head -20
+            echo "Listing all recently created files:"
+            find . -type f -newer /usr 2>/dev/null | head -20
+            exit 1
+          fi
+
           echo "Image generated at: $IMAGE_PATH"
-          echo "::set-output name=image_path::$IMAGE_PATH"
-          echo "::set-output name=image_name::$(basename $IMAGE_PATH)"
+          echo "image_path=$IMAGE_PATH" >> $GITHUB_OUTPUT
+          echo "image_name=$(basename $IMAGE_PATH)" >> $GITHUB_OUTPUT
 
       - name: Upload image as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.generate_image.outputs.image_name }}
           path: ${{ steps.generate_image.outputs.image_path }}
 
-      - name: Comment on PR with link to artifact
+      - name: Publish USP chart for sharing
+        id: publish_image
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          IMAGE_PATH: ${{ steps.generate_image.outputs.image_path }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f "$IMAGE_PATH" ]; then
+            echo "Unable to find generated image at $IMAGE_PATH" >&2
+            exit 1
+          fi
+
+          WORKTREE=$(mktemp -d)
+          trap 'rm -rf "$WORKTREE"' EXIT
+
+          git config --global --add safe.directory "$WORKTREE"
+
+          pushd "$WORKTREE" >/dev/null
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO}.git"
+          git remote add origin "$REMOTE_URL"
+
+          BRANCH="usp-assets"
+
+          set +e
+          git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1
+          HAS_REMOTE_BRANCH=$?
+          set -e
+
+          if [ "$HAS_REMOTE_BRANCH" -eq 0 ]; then
+            git fetch --depth=1 origin "$BRANCH"
+            git checkout -b "$BRANCH" "origin/$BRANCH"
+          else
+            git checkout --orphan "$BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          RAW_HEAD_REF="${PR_HEAD_REF:-head}"
+          SAFE_HEAD_REF=$(printf '%s' "$RAW_HEAD_REF" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+          if [ -z "$SAFE_HEAD_REF" ]; then
+            SAFE_HEAD_REF="head"
+          fi
+
+          DEST_DIR="pr-${PR_NUMBER}-${SAFE_HEAD_REF}"
+          mkdir -p "$DEST_DIR"
+
+          FILE_BASENAME="usp-chart-run-${RUN_ID}-attempt-${RUN_ATTEMPT}.png"
+          cp "$GITHUB_WORKSPACE/$IMAGE_PATH" "$DEST_DIR/$FILE_BASENAME"
+
+          EXISTING=$(ls -1t "$DEST_DIR"/usp-chart-run-*.png 2>/dev/null || true)
+          if [ -n "$EXISTING" ]; then
+            echo "$EXISTING" | tail -n +6 | xargs -r rm --
+          fi
+
+          git add "$DEST_DIR"
+          if git diff --cached --quiet; then
+            echo "public_url=https://raw.githubusercontent.com/${REPO}/${BRANCH}/${DEST_DIR}/${FILE_BASENAME}" >> "$GITHUB_OUTPUT"
+            popd >/dev/null
+            exit 0
+          fi
+
+          git commit -m "Add USP chart for PR #${PR_NUMBER} (run ${RUN_ID})" >/dev/null
+
+          for attempt in 1 2 3; do
+            if git push origin "$BRANCH" >/dev/null 2>&1; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Failed to push hosted chart after 3 attempts" >&2
+              exit 1
+            fi
+            git fetch origin "$BRANCH"
+            git rebase origin/"$BRANCH"
+          done
+
+          echo "public_url=https://raw.githubusercontent.com/${REPO}/${BRANCH}/${DEST_DIR}/${FILE_BASENAME}" >> "$GITHUB_OUTPUT"
+          popd >/dev/null
+
+      - name: Comment on PR with embedded image
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const issue_number = context.issue.number;
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${context.runId}`;
+            const fs = require('fs');
+            const path = require('path');
+
+            const issueNumber = context.issue.number;
+            const { owner, repo } = context.repo;
+            const runId = context.runId;
+
             const imageName = "${{ steps.generate_image.outputs.image_name }}";
+            const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
+            const imagePath = path.resolve('${{ steps.generate_image.outputs.image_path }}');
+            const shareableImageUrl = "${{ steps.publish_image.outputs.public_url }}";
+            const prTitle = ${{ toJSON(github.event.pull_request.title) }};
+            const headRef = ${{ toJSON(github.event.pull_request.head.ref) }};
+            const baseRef = ${{ toJSON(github.event.pull_request.base.ref) }};
 
-            const commentBody = `
-              ### 🎨 Auto-generated USP Chart
+            let artifactDownloadUrl = `${artifactUrl}/artifacts/download`;
+            try {
+              const { data: artifactsResponse } = await github.rest.actions.listWorkflowRunArtifacts({
+                owner,
+                repo,
+                run_id: runId,
+                per_page: 100,
+              });
 
-              A new USP chart has been generated for this pull request.
+              const matchingArtifact = artifactsResponse.artifacts?.find(
+                (artifact) => artifact.name === imageName
+              );
 
-              You can download the chart, **${imageName}**, from the [build artifacts](${artifactUrl}).
-            `;
+              if (matchingArtifact?.id) {
+                artifactDownloadUrl = `${artifactUrl}/artifacts/${matchingArtifact.id}`;
+              }
+            } catch (error) {
+              console.warn('Unable to build dedicated artifact URL', error);
+            }
+
+            if (!fs.existsSync(imagePath)) {
+              throw new Error(`Expected image at ${imagePath}, but it was not found.`);
+            }
+
+            const hasHostedImage = Boolean(shareableImageUrl && shareableImageUrl.trim().length);
+
+            const commentLines = [
+              '### 🎨 Auto-generated USP Chart',
+              '',
+              `**Title:** ${prTitle}`,
+              `**Branches:** ${headRef} -> ${baseRef}`,
+              '',
+              'A new USP chart has been generated for this pull request using AI.',
+              '',
+              '📥 **Download Options:**',
+            ];
+
+            if (hasHostedImage) {
+              commentLines.push(`- [Open hosted image](${shareableImageUrl})`);
+            } else {
+              commentLines.push('- Hosted image: unavailable (fork PR or publish failure).');
+            }
+
+            commentLines.push(
+              `- [Download from workflow artifacts](${artifactDownloadUrl})`,
+              `- Image file: \`${imageName}\``,
+              '',
+            );
+
+            if (hasHostedImage) {
+              commentLines.push(`![USP Chart](${shareableImageUrl})`);
+            } else {
+              commentLines.push('_Preview unavailable — hosted image publishing skipped (requires same-repo PR)._');
+            }
+
+            commentLines.push(
+              '',
+              `_Generated at: ${new Date().toISOString()}_`,
+            );
+
+            const commentBody = commentLines.join('\n');
 
             const { data: comments } = await github.rest.issues.listComments({
               owner,
               repo,
-              issue_number,
+              issue_number: issueNumber,
             });
 
             const botComment = comments.find(comment =>
-              comment.user.login === 'github-actions[bot]'
+              comment.user?.login === 'github-actions[bot]' &&
+              comment.body?.includes('Auto-generated USP Chart')
             );
 
             if (botComment) {
@@ -100,11 +299,11 @@ jobs:
                 owner,
                 repo,
                 comment_id: botComment.id,
-                body: commentBody + '\n_Updated at: ' + new Date().toISOString() + '_',
+                body: commentBody,
               });
             } else {
               await github.rest.issues.createComment({
-                issue_number,
+                issue_number: issueNumber,
                 owner,
                 repo,
                 body: commentBody,

@@ -42,7 +42,7 @@ export default function RootLayout({
                   root.classList.add(resolvedMode === 'dark' ? 'dark' : 'light');
                   root.style.colorScheme = resolvedMode;
 
-                  root.classList.remove('theme-blue', 'theme-green', 'theme-rose', 'theme-amber', 'theme-violet');
+                  root.classList.remove('theme-blue', 'theme-green', 'theme-rose', 'theme-amber', 'theme-violet', 'theme-pink');
                   if (accentColor !== 'blue') {
                     root.classList.add('theme-' + accentColor);
                   }
