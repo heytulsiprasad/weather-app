@@ -1,7 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
+import { saveSearchToHistory, getSearchHistory, groupHistoryByDate } from "@/lib/search-history";
+import type { GroupedHistory } from "@/types/search-history";
+import { SearchHistory } from "./search-history";
 
 type WeatherSummary = {
   location: {
@@ -37,6 +40,12 @@ export default function WeatherApp() {
   const [weather, setWeather] = useState<WeatherSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [history, setHistory] = useState<GroupedHistory[]>([]);
+
+  useEffect(() => {
+    const loadedHistory = getSearchHistory();
+    setHistory(groupHistoryByDate(loadedHistory));
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,6 +70,16 @@ export default function WeatherApp() {
 
       const payload: WeatherSummary = await response.json();
       setWeather(payload);
+
+      saveSearchToHistory({
+        city: payload.location.city,
+        country: payload.location.country,
+        weather: payload.current,
+        forecast: payload.forecast,
+      });
+
+      const updatedHistory = getSearchHistory();
+      setHistory(groupHistoryByDate(updatedHistory));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unexpected error.";
       setError(message);
@@ -173,6 +192,8 @@ export default function WeatherApp() {
           ) : null}
         </div>
       ) : null}
+
+      {history.length > 0 && <SearchHistory history={history} />}
     </section>
   );
 }
