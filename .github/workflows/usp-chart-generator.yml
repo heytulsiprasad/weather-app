@@ -111,11 +111,18 @@ jobs:
           git remote add origin "$REMOTE_URL"
 
           BRANCH="usp-assets"
-          if git ls-remote --heads origin "$BRANCH" >/dev/null 2>&1; then
+
+          set +e
+          git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1
+          HAS_REMOTE_BRANCH=$?
+          set -e
+
+          if [ "$HAS_REMOTE_BRANCH" -eq 0 ]; then
             git fetch --depth=1 origin "$BRANCH"
             git checkout -b "$BRANCH" "origin/$BRANCH"
           else
             git checkout --orphan "$BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
           fi
 
           DEST_DIR="pr-${PR_NUMBER}"
