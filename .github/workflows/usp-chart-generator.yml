@@ -29,12 +29,45 @@ jobs:
         id: generate_image
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ', ') }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           # Create output directory
           mkdir -p usp-output
 
-          # The prompt for the diagram
-          PROMPT="Create a detailed USP (Unique Selling Proposition) chart for a modern weather application. The design should be a visually appealing bento grid layout, inspired by Apple's design aesthetic. The chart should highlight the following key features: Real-time Weather with current temperature (in °C and °F), feels like temperature, weather icon and description, humidity and wind speed. Hourly Forecast showing the next 5 hours with icons, temperature, and time. City Search with a prominent search bar. Design features including sleek responsive design on desktop and mobile, plus light and dark mode themes. The overall diagram should be clean, professional, and suitable for sharing on social media."
+          # Build a PR-aware creative brief for the image generation prompt
+          PROMPT_FILE="usp-output/pr-brief.txt"
+          {
+            echo "Create a detailed USP (Unique Selling Proposition) chart for the specific changes delivered in this pull request."
+            echo "Use a visually appealing bento grid inspired by Apple's design language."
+            echo
+            echo "Pull Request Title: ${PR_TITLE:-Untitled PR}";
+            echo "Source Branch: ${PR_HEAD_REF:-unknown} (into ${PR_BASE_REF:-unknown target})";
+            if [ -n "${PR_LABELS}" ]; then
+              echo "Labels: ${PR_LABELS}";
+            else
+              echo "Labels: none";
+            fi
+            echo
+            echo "Pull Request Summary:";
+            if [ -n "${PR_BODY}" ]; then
+              printf '%s\n' "${PR_BODY}";
+            else
+              echo "No description provided.";
+            fi
+            echo
+            echo "Design Requirements:";
+            echo "- Emphasize only what's new or changed in this pull request (consider the title, labels, and summary).";
+            echo "- Showcase 3-6 key callouts, each with a concise headline and supporting detail.";
+            echo "- Include one panel that highlights business/user impact or why the change matters.";
+            echo "- Maintain a polished layout suitable for sharing on social media announcements.";
+            echo "- Present temperatures in both °C and °F if weather data appears.";
+          } > "$PROMPT_FILE"
+
+          PROMPT=$(cat "$PROMPT_FILE")
 
           # Use nanobanana's /generate command instead of /diagram to get PNG
           echo "/generate \"$PROMPT\" --count 1 --preview" | gemini -y -e nanobanana || echo "Nanobanana command failed, trying alternative"
@@ -86,6 +119,8 @@ jobs:
           IMAGE_PATH: ${{ steps.generate_image.outputs.image_path }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.number }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
           RUN_ID: ${{ github.run_id }}
           RUN_ATTEMPT: ${{ github.run_attempt }}
           REPO: ${{ github.repository }}
@@ -125,7 +160,13 @@ jobs:
             git rm -rf . >/dev/null 2>&1 || true
           fi
 
-          DEST_DIR="pr-${PR_NUMBER}"
+          RAW_HEAD_REF="${PR_HEAD_REF:-head}"
+          SAFE_HEAD_REF=$(printf '%s' "$RAW_HEAD_REF" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+          if [ -z "$SAFE_HEAD_REF" ]; then
+            SAFE_HEAD_REF="head"
+          fi
+
+          DEST_DIR="pr-${PR_NUMBER}-${SAFE_HEAD_REF}"
           mkdir -p "$DEST_DIR"
 
           FILE_BASENAME="usp-chart-run-${RUN_ID}-attempt-${RUN_ATTEMPT}.png"
@@ -176,6 +217,9 @@ jobs:
             const artifactUrl = `https://github.com/${owner}/${repo}/actions/runs/${runId}`;
             const imagePath = path.resolve('${{ steps.generate_image.outputs.image_path }}');
             const shareableImageUrl = "${{ steps.publish_image.outputs.public_url }}";
+            const prTitle = ${{ toJSON(github.event.pull_request.title) }};
+            const headRef = ${{ toJSON(github.event.pull_request.head.ref) }};
+            const baseRef = ${{ toJSON(github.event.pull_request.base.ref) }};
 
             let artifactDownloadUrl = `${artifactUrl}/artifacts/download`;
             try {
@@ -205,6 +249,9 @@ jobs:
 
             const commentLines = [
               '### 🎨 Auto-generated USP Chart',
+              '',
+              `**Title:** ${prTitle}`,
+              `**Branches:** ${headRef} -> ${baseRef}`,
               '',
               'A new USP chart has been generated for this pull request using AI.',
               '',
