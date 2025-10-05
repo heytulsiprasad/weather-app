@@ -109,7 +109,7 @@ export default function WeatherApp() {
         />
         <button
           type="submit"
-          className="flex w-full items-center justify-center rounded-2xl bg-[rgb(var(--color-primary))] px-5 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[rgb(var(--color-primary-dark))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--color-primary))] disabled:opacity-50 sm:w-auto"
+          className="flex w-full items-center justify-center rounded-2xl bg-[rgb(var(--color-primary))] px-5 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[rgb(var(--color-primary-dark))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary))]/20 focus-visible:ring-offset-2 disabled:opacity-50 sm:w-auto"
           disabled={isLoading}
         >
           {isLoading ? "Loading…" : "Get weather"}
