@@ -105,11 +105,11 @@ export default function WeatherApp() {
           value={city}
           onChange={(event) => setCity(event.target.value)}
           placeholder="Try San Francisco, Tokyo, Paris..."
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm transition focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary))]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         />
         <button
           type="submit"
-          className="flex w-full items-center justify-center rounded-2xl bg-primary px-5 py-3 text-base font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto"
+          className="flex w-full items-center justify-center rounded-2xl bg-[rgb(var(--color-primary))] px-5 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[rgb(var(--color-primary-dark))] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--color-primary))] disabled:opacity-50 sm:w-auto"
           disabled={isLoading}
         >
           {isLoading ? "Loading…" : "Get weather"}
@@ -124,9 +124,9 @@ export default function WeatherApp() {
 
       {weather ? (
         <div className="mt-8 space-y-8">
-          <div className="flex flex-col gap-6 rounded-3xl bg-primary-light/60 p-6 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-6 rounded-3xl bg-[rgb(var(--color-primary-light))]/60 p-6 dark:bg-slate-800/60 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-wide text-primary-dark dark:text-primary-light">
+              <p className="text-sm uppercase tracking-wide text-[rgb(var(--color-primary-dark))] dark:text-[rgb(var(--color-primary-light))]">
                 {weather.location.city}
                 {weather.location.country ? `, ${weather.location.country}` : ""}
               </p>
