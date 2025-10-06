@@ -40,12 +40,84 @@ export default function WeatherApp() {
   const [weather, setWeather] = useState<WeatherSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [history, setHistory] = useState<GroupedHistory[]>([]);
 
   useEffect(() => {
     const loadedHistory = getSearchHistory();
     setHistory(groupHistoryByDate(loadedHistory));
   }, []);
+
+  const fetchWeatherByCoords = async (latitude: number, longitude: number) => {
+    setIsLocating(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/weather?lat=${latitude}&lon=${longitude}`);
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error ?? "Unable to retrieve weather for your location.");
+      }
+
+      const payload: WeatherSummary = await response.json();
+      setWeather(payload);
+      setCity(payload.location.city); // Update the input with the detected city
+
+      saveSearchToHistory({
+        city: payload.location.city,
+        country: payload.location.country,
+        weather: payload.current,
+        forecast: payload.forecast,
+      });
+
+      const updatedHistory = getSearchHistory();
+      setHistory(groupHistoryByDate(updatedHistory));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unexpected error.";
+      setError(message);
+      setWeather(null);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+
+    setIsLocating(true);
+    setError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        fetchWeatherByCoords(position.coords.latitude, position.coords.longitude);
+      },
+      (err) => {
+        setIsLocating(false);
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            setError("Location permission denied. Please enable location access.");
+            break;
+          case err.POSITION_UNAVAILABLE:
+            setError("Location information unavailable.");
+            break;
+          case err.TIMEOUT:
+            setError("Location request timed out.");
+            break;
+          default:
+            setError("Unable to get your location.");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -107,13 +179,41 @@ export default function WeatherApp() {
           placeholder="Try San Francisco, Tokyo, Paris..."
           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 shadow-sm transition focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary))]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
         />
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center rounded-2xl bg-[rgb(var(--color-primary))] px-5 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[rgb(var(--color-primary-dark))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary))]/20 focus-visible:ring-offset-2 disabled:opacity-50 sm:w-auto"
-          disabled={isLoading}
-        >
-          {isLoading ? "Loading…" : "Get weather"}
-        </button>
+        <div className="flex gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={handleUseLocation}
+            className="flex items-center justify-center rounded-2xl border-2 border-[rgb(var(--color-primary))] bg-white px-4 py-3 text-base font-semibold text-[rgb(var(--color-primary))] transition hover:bg-[rgb(var(--color-primary))]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--color-primary))] dark:border-[rgb(var(--color-primary-light))] dark:bg-slate-800 dark:text-[rgb(var(--color-primary-light))] dark:hover:bg-[rgb(var(--color-primary-light))]/10"
+            disabled={isLocating || isLoading}
+            title="Use your current location"
+            aria-label="Use current location"
+          >
+            {isLocating ? (
+              <>
+                <svg className="mr-2 h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span className="hidden sm:inline">Locating...</span>
+              </>
+            ) : (
+              <>
+                <svg className="h-5 w-5 sm:mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span className="hidden sm:inline">Current Location</span>
+              </>
+            )}
+          </button>
+          <button
+            type="submit"
+            className="flex w-full items-center justify-center rounded-2xl bg-[rgb(var(--color-primary))] px-5 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[rgb(var(--color-primary-dark))] focus:outline-none focus-visible:ring-2 focus-visible:ring-[rgb(var(--color-primary))]/20 focus-visible:ring-offset-2 disabled:opacity-50 sm:w-auto"
+            disabled={isLoading || isLocating}
+          >
+            {isLoading ? "Loading…" : "Get weather"}
+          </button>
+        </div>
       </form>
 
       {error ? (

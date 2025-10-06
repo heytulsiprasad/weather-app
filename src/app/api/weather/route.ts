@@ -37,9 +37,12 @@ type ForecastWeather = {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cityQuery = searchParams.get("city")?.trim();
+  const lat = searchParams.get("lat");
+  const lon = searchParams.get("lon");
 
-  if (!cityQuery) {
-    return NextResponse.json({ error: "Provide a city name, e.g. 'Seattle'." }, { status: 400 });
+  // Check if we have either city or coordinates
+  if (!cityQuery && (!lat || !lon)) {
+    return NextResponse.json({ error: "Provide a city name or coordinates." }, { status: 400 });
   }
 
   const apiKey = process.env.OPENWEATHER_API_KEY;
@@ -52,14 +55,26 @@ export async function GET(request: Request) {
   }
 
   try {
+    // Build query params based on whether we have city or coordinates
+    let weatherParams: string;
+    let forecastParams: string;
+
+    if (lat && lon) {
+      weatherParams = `lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+      forecastParams = `lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+    } else {
+      weatherParams = `q=${encodeURIComponent(cityQuery!)}&units=metric&appid=${apiKey}`;
+      forecastParams = `q=${encodeURIComponent(cityQuery!)}&units=metric&appid=${apiKey}`;
+    }
+
     const currentResponse = await fetch(
-      `${BASE_URL}/weather?q=${encodeURIComponent(cityQuery)}&units=metric&appid=${apiKey}`,
+      `${BASE_URL}/weather?${weatherParams}`,
       { next: { revalidate: 0 } },
     );
 
     if (!currentResponse.ok) {
       const payload = (await currentResponse.json().catch(() => null)) as { message?: string } | null;
-      const reason = payload?.message ?? "Unable to load weather for that city.";
+      const reason = payload?.message ?? "Unable to load weather for that location.";
       return NextResponse.json({ error: reason }, { status: currentResponse.status });
     }
 
@@ -69,7 +84,7 @@ export async function GET(request: Request) {
 
     try {
       const forecastResponse = await fetch(
-        `${BASE_URL}/forecast?q=${encodeURIComponent(cityQuery)}&units=metric&appid=${apiKey}`,
+        `${BASE_URL}/forecast?${forecastParams}`,
         { next: { revalidate: 0 } },
       );
 
