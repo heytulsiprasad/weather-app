@@ -29,11 +29,9 @@ export const addFavorite = async (
 export const getFavorites = async (userId: string): Promise<Favorite[]> => {
   const q = query(collection(firestore, `users/${userId}/favorites`));
   const querySnapshot = await getDocs(q);
-  const favorites: Favorite[] = [];
-  querySnapshot.forEach((doc) => {
-    favorites.push({ id: doc.id, ...doc.data() } as Favorite);
-  });
-  return favorites;
+  return querySnapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() } as Favorite)
+  );
 };
 
 export const removeFavorite = async (userId: string, favoriteId: string) => {

@@ -107,6 +107,8 @@ export default function WeatherApp() {
   useEffect(() => {
     if (user) {
       getFavorites(user.uid).then(setFavorites);
+    } else {
+      setFavorites([]); // Clear favorites on logout
     }
   }, [user]);
 
@@ -114,7 +116,10 @@ export default function WeatherApp() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
+      setError(null);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to sign in";
+      setError(errorMessage);
       console.error("Error signing in with Google", error);
     }
   };
@@ -122,13 +127,20 @@ export default function WeatherApp() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
+      setError(null);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to sign out";
+      setError(errorMessage);
       console.error("Error signing out", error);
     }
   };
 
   const handleSaveFavorite = async () => {
     if (user && weather) {
+      const isAlreadyFavorite = favorites.some(
+        (fav) => fav.city.toLowerCase() === weather.location.city.toLowerCase()
+      );
+      if (isAlreadyFavorite) return; // Already a favorite, do nothing
       const newFavorite = await addFavorite(
         user.uid,
         weather.location.city,
@@ -465,9 +477,16 @@ export default function WeatherApp() {
               {user && (
                 <button
                   onClick={handleSaveFavorite}
-                  className="rounded-2xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-2"
+                  disabled={favorites.some(
+                    (fav) => fav.city.toLowerCase() === weather?.location.city.toLowerCase()
+                  )}
+                  className="rounded-2xl bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Save to Favorites
+                  {favorites.some(
+                    (fav) => fav.city.toLowerCase() === weather?.location.city.toLowerCase()
+                  )
+                    ? "Saved"
+                    : "Save to Favorites"}
                 </button>
               )}
             </div>
