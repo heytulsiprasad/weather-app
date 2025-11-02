@@ -10,7 +10,12 @@ const {
 async function main() {
   const payload = await readJsonFromStdin();
   const workspaceRoot = getWorkspaceRoot(payload);
-  const absolutePath = payload?.path ?? payload?.filepath ?? "";
+  const absolutePath =
+    payload?.file_path ??
+    payload?.filePath ??
+    payload?.path ??
+    payload?.filepath ??
+    "";
   const relativePath = absolutePath.startsWith(workspaceRoot)
     ? path.relative(workspaceRoot, absolutePath)
     : absolutePath;
@@ -55,4 +60,3 @@ main().catch((error) => {
     userMessage: "Cursor hook errored; file read cancelled to be safe.",
   });
 });
-

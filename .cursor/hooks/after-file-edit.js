@@ -13,7 +13,12 @@ const LINTABLE_EXTENSIONS = new Set(["ts", "tsx", "js", "jsx", "mjs", "cjs"]);
 async function main() {
   const payload = await readJsonFromStdin();
   const workspaceRoot = getWorkspaceRoot(payload);
-  const absolutePath = payload?.path ?? payload?.filepath ?? "";
+  const absolutePath =
+    payload?.file_path ??
+    payload?.filePath ??
+    payload?.path ??
+    payload?.filepath ??
+    "";
   const relativePath = absolutePath.startsWith(workspaceRoot)
     ? path.relative(workspaceRoot, absolutePath)
     : absolutePath;
@@ -69,4 +74,3 @@ main().catch((error) => {
     message: "Cursor hook encountered an unexpected error; check console.",
   });
 });
-
