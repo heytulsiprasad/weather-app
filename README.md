@@ -2,6 +2,16 @@
 
 A minimal Next.js + Tailwind CSS app that lets you search any city and instantly see the current conditions plus the next few hours of forecast data from OpenWeatherMap.
 
+## Features
+
+- 🌤️ Real-time weather data from OpenWeatherMap
+- 📍 Search any city worldwide
+- 🌡️ Dual temperature display (Celsius & Fahrenheit)
+- ⏰ 5-hour forecast with 3-hour intervals
+- 🎨 Modern UI with Tailwind CSS v4
+- 🌙 Dark mode support
+- 📱 Fully responsive design
+
 ## Prerequisites
 
 - Node.js 18+
