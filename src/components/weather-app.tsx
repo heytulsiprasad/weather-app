@@ -113,6 +113,11 @@ export default function WeatherApp() {
   }, [user]);
 
   const handleLogin = async () => {
+    if (!auth) {
+      setError("Sign-in is unavailable because Firebase is not configured.");
+      return;
+    }
+
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -125,6 +130,8 @@ export default function WeatherApp() {
   };
 
   const handleLogout = async () => {
+    if (!auth) return;
+
     try {
       await signOut(auth);
       setError(null);
