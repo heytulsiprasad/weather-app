@@ -1,7 +1,7 @@
 
 'use client';
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useMemo } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
@@ -27,7 +27,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
-  return <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>;
+  const value = useMemo(() => ({ user }), [user]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
