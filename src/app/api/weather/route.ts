@@ -6,6 +6,8 @@ type CurrentWeather = {
   name?: string;
   sys?: {
     country?: string;
+    sunrise?: number;
+    sunset?: number;
   };
   main?: {
     temp?: number;
@@ -120,6 +122,10 @@ export async function GET(request: Request) {
         windSpeed:
           typeof currentData.wind?.speed === "number" ? currentData.wind.speed : 0,
         icon: currentData.weather?.[0]?.icon ?? "01d",
+        sunrise:
+          typeof currentData.sys?.sunrise === "number" ? currentData.sys.sunrise : 0,
+        sunset:
+          typeof currentData.sys?.sunset === "number" ? currentData.sys.sunset : 0,
       },
       forecast: normalizedForecast,
     });
