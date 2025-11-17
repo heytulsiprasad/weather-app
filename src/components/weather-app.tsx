@@ -36,6 +36,8 @@ type WeatherSummary = {
     humidity: number;
     windSpeed: number;
     icon: string;
+    sunrise: number;
+    sunset: number;
   };
   forecast: Array<{
     dt: number;
@@ -49,6 +51,14 @@ const formatTemperature = (celsius: number) => ({
   c: Math.round(celsius),
   f: Math.round((celsius * 9) / 5 + 32),
 });
+
+const formatTime = (timestamp: number) => {
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
 
 const iconUrl = (iconCode: string) =>
   `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
@@ -470,6 +480,10 @@ export default function WeatherApp() {
                 {formatTemperature(weather.current.temperature).f}°F ·
                 humidity {weather.current.humidity}% · wind{" "}
                 {Math.round(weather.current.windSpeed)} m/s
+              </p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                ☀️ Sunrise {formatTime(weather.current.sunrise)} · 🌅 Sunset{" "}
+                {formatTime(weather.current.sunset)}
               </p>
             </div>
             <div className="flex flex-col items-center sm:flex-row sm:gap-4">
