@@ -36,6 +36,8 @@ type WeatherSummary = {
     humidity: number;
     windSpeed: number;
     icon: string;
+    sunrise: number;
+    sunset: number;
   };
   forecast: Array<{
     dt: number;
@@ -49,6 +51,14 @@ const formatTemperature = (celsius: number) => ({
   c: Math.round(celsius),
   f: Math.round((celsius * 9) / 5 + 32),
 });
+
+const formatTime = (timestamp: number) => {
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
 
 const iconUrl = (iconCode: string) =>
   `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
@@ -569,6 +579,22 @@ export default function WeatherApp() {
                     </svg>
                     <span className="font-mono text-xs font-medium text-slate-700 dark:text-slate-300">
                       {Math.round(weather.current.windSpeed)} m/s wind
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl bg-white/60 px-4 py-2 backdrop-blur-sm dark:bg-slate-900/60">
+                    <svg className="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span className="font-mono text-xs font-medium text-slate-700 dark:text-slate-300">
+                      {formatTime(weather.current.sunrise)} sunrise
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl bg-white/60 px-4 py-2 backdrop-blur-sm dark:bg-slate-900/60">
+                    <svg className="h-4 w-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <span className="font-mono text-xs font-medium text-slate-700 dark:text-slate-300">
+                      {formatTime(weather.current.sunset)} sunset
                     </span>
                   </div>
                 </div>
