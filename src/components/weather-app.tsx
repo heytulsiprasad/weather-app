@@ -23,6 +23,7 @@ import {
   removeFavorite,
   Favorite,
 } from "@/lib/firestore";
+import TemperatureChart from "./temperature-chart";
 
 type WeatherSummary = {
   location: {
@@ -500,47 +501,50 @@ export default function WeatherApp() {
           </div>
 
           {weather.forecast.length ? (
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
-                Next Hours
-              </h3>
-              <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
-                {weather.forecast.map((entry) => {
-                  const temps = formatTemperature(entry.temperature);
-                  const date = new Date(entry.dt * 1000);
+            <>
+              <TemperatureChart forecast={weather.forecast} />
+              <div className="mt-8">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                  Next Hours
+                </h3>
+                <ul className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-5">
+                  {weather.forecast.map((entry) => {
+                    const temps = formatTemperature(entry.temperature);
+                    const date = new Date(entry.dt * 1000);
 
-                  return (
-                    <li
-                      key={entry.dt}
-                      className="rounded-2xl border border-slate-200 bg-white/70 p-4 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800/70"
-                    >
-                      <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                        {date.toLocaleTimeString([], {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      <Image
-                        src={iconUrl(entry.icon)}
-                        alt={entry.description}
-                        width={48}
-                        height={48}
-                        className="mx-auto h-12 w-12"
-                      />
-                      <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
-                        {temps.c}°C
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {temps.f}°F
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {entry.description}
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
+                    return (
+                      <li
+                        key={entry.dt}
+                        className="rounded-2xl border border-slate-200 bg-white/70 p-4 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800/70"
+                      >
+                        <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                          {date.toLocaleTimeString([], {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                        <Image
+                          src={iconUrl(entry.icon)}
+                          alt={entry.description}
+                          width={48}
+                          height={48}
+                          className="mx-auto h-12 w-12"
+                        />
+                        <p className="text-base font-semibold text-slate-800 dark:text-slate-100">
+                          {temps.c}°C
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {temps.f}°F
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          {entry.description}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </>
           ) : null}
         </div>
       ) : null}
