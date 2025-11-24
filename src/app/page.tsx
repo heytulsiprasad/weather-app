@@ -4,31 +4,63 @@ import { ColorThemeSelector } from "@/components/color-theme-selector";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[rgb(var(--color-primary-light))] via-blue-50 to-indigo-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col gap-10 px-6 pb-12 pt-20 sm:px-10">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <header className="flex flex-col items-center text-center sm:items-start sm:text-left">
-            <span className="rounded-full bg-white/60 px-3 py-1 text-xs font-medium uppercase tracking-widest text-slate-600 shadow-sm dark:bg-slate-900/60 dark:text-slate-300">
-              Weather App
-            </span>
-            <h1 className="mt-6 text-4xl font-semibold text-slate-900 dark:text-slate-50 sm:text-5xl">
-              Instant weather
+    <main className="relative min-h-screen overflow-hidden">
+      {/* Atmospheric gradient background */}
+      <div
+        className="fixed inset-0 -z-10"
+        style={{
+          background: `
+            radial-gradient(circle at 20% 20%, var(--gradient-sky-start) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, var(--gradient-sky-mid) 0%, transparent 50%),
+            radial-gradient(circle at 40% 90%, var(--gradient-sky-end) 0%, transparent 40%),
+            var(--background)
+          `
+        }}
+      />
+
+      {/* Subtle noise texture */}
+      <div className="noise-overlay" />
+
+      {/* Content */}
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-12 px-6 pb-16 pt-12 sm:px-10 lg:pt-20">
+        {/* Header with controls */}
+        <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
+          <header className="flex flex-col opacity-0 animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 self-start">
+              <div className="h-1 w-1 rounded-full bg-[rgb(var(--color-primary))]" />
+              <span className="font-mono text-xs font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                Meteorology Lab
+              </span>
+            </div>
+            <h1 className="mt-6 font-display text-5xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
+              Weather
+              <span className="block text-[rgb(var(--color-primary))]">Intelligence</span>
             </h1>
-            <p className="mt-4 max-w-2xl text-base text-slate-600 dark:text-slate-300">
-              Search any city worldwide to see the current temperature, feel-like conditions, humidity, wind, and a quick look at the next few hours. Powered by OpenWeatherMap.
+            <p className="mt-6 max-w-xl font-body text-base leading-relaxed text-slate-600 dark:text-slate-300 sm:text-lg">
+              Real-time atmospheric data and forecasting powered by advanced meteorological systems.
+              Search any location worldwide.
             </p>
           </header>
 
-          <div className="flex flex-col gap-4 self-center sm:self-start">
+          <div className="flex flex-row gap-3 self-start opacity-0 animate-fade-in-up stagger-1 sm:flex-col">
             <ThemeToggle />
             <ColorThemeSelector />
           </div>
         </div>
 
-        <WeatherApp />
+        {/* Weather app */}
+        <div className="opacity-0 animate-fade-in-up stagger-2">
+          <WeatherApp />
+        </div>
 
-        <footer className="text-center text-xs text-slate-500 dark:text-slate-400 sm:text-left">
-          Data courtesy of OpenWeatherMap · Updated live when you search.
+        {/* Footer */}
+        <footer className="mt-auto text-center font-mono text-xs text-slate-400 opacity-0 animate-fade-in stagger-3 sm:text-left dark:text-slate-500">
+          <div className="flex items-center gap-2">
+            <div className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <span>Powered by OpenWeatherMap API</span>
+            <div className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <span>Live data</span>
+          </div>
         </footer>
       </div>
     </main>
