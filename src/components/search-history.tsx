@@ -21,12 +21,10 @@ export function SearchHistory({ history }: SearchHistoryProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("all");
 
-  // Get all available dates
   const availableDates = useMemo(() => {
     return history.map((group) => group.date);
   }, [history]);
 
-  // Flatten all entries for filtering
   const allEntries = useMemo(() => {
     return history.flatMap((group) =>
       group.entries.map((entry) => ({
@@ -36,7 +34,6 @@ export function SearchHistory({ history }: SearchHistoryProps) {
     );
   }, [history]);
 
-  // Filter entries based on search query and selected date
   const filteredEntries = useMemo(() => {
     return allEntries.filter((entry) => {
       const matchesSearch = entry.city
@@ -48,7 +45,6 @@ export function SearchHistory({ history }: SearchHistoryProps) {
     });
   }, [allEntries, searchQuery, selectedDate]);
 
-  // Group filtered entries by date
   const groupedFilteredEntries = useMemo(() => {
     const groups: { [key: string]: typeof filteredEntries } = {};
     filteredEntries.forEach((entry) => {
@@ -63,39 +59,59 @@ export function SearchHistory({ history }: SearchHistoryProps) {
   const totalSearches = allEntries.length;
 
   return (
-    <div className="mt-8">
+    <div className="glass-card rounded-3xl p-8">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between rounded-2xl bg-gradient-to-r from-[rgb(var(--color-primary))]/80 to-[rgb(var(--color-primary-dark))]/80 px-6 py-4 text-left shadow-lg transition hover:from-[rgb(var(--color-primary))] hover:to-[rgb(var(--color-primary-dark))] dark:from-slate-800 dark:to-slate-900 dark:hover:from-slate-700 dark:hover:to-slate-800"
+        className="group flex w-full items-center justify-between"
         aria-expanded={isOpen}
       >
-        <div>
-          <h3 className="text-base font-semibold text-white dark:text-slate-100">
-            Recent Searches
-          </h3>
-          <p className="text-sm text-white/80 dark:text-slate-300">
-            {totalSearches} {totalSearches === 1 ? "search" : "searches"} saved
-          </p>
+        <div className="flex items-center gap-3">
+          <svg
+            className="h-5 w-5 text-[rgb(var(--color-primary))]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div className="text-left">
+            <h3 className="font-display text-lg font-semibold text-slate-900 dark:text-white">
+              Search History
+            </h3>
+            <p className="font-mono text-xs text-slate-500 dark:text-slate-400">
+              {totalSearches} {totalSearches === 1 ? "search" : "searches"} recorded
+            </p>
+          </div>
         </div>
-        <svg
-          className={`h-5 w-5 text-white transition-transform dark:text-slate-100 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
+        <div className="flex items-center gap-3">
+          <span className="hidden font-mono text-sm text-slate-500 group-hover:text-[rgb(var(--color-primary))] dark:text-slate-400 sm:inline">
+            {isOpen ? "Hide" : "Show"}
+          </span>
+          <svg
+            className={`h-5 w-5 text-slate-500 transition-all duration-300 group-hover:text-[rgb(var(--color-primary))] dark:text-slate-400 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
       </button>
 
       {isOpen && (
-        <div className="mt-4 space-y-6">
+        <div className="mt-8 space-y-6">
           {/* Search and Filter Controls */}
           <div className="flex flex-col gap-4 sm:flex-row">
             {/* Search Input */}
@@ -105,15 +121,15 @@ export function SearchHistory({ history }: SearchHistoryProps) {
               </label>
               <div className="relative">
                 <svg
-                  className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
+                  className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  strokeWidth="2"
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    strokeWidth={2}
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
@@ -122,8 +138,8 @@ export function SearchHistory({ history }: SearchHistoryProps) {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by city name..."
-                  className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm transition focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary))]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                  placeholder="Filter by city..."
+                  className="w-full rounded-2xl border-2 border-slate-200/60 bg-white/60 py-3 pl-11 pr-4 font-body text-sm text-slate-900 placeholder-slate-400 backdrop-blur-sm transition-all duration-300 focus:border-[rgb(var(--color-primary))] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[rgb(var(--color-primary))]/10 dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder-slate-500"
                 />
               </div>
             </div>
@@ -137,7 +153,7 @@ export function SearchHistory({ history }: SearchHistoryProps) {
                 id="date-filter"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--color-primary))]/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="w-full rounded-2xl border-2 border-slate-200/60 bg-white/60 px-4 py-3 font-body text-sm text-slate-900 backdrop-blur-sm transition-all duration-300 focus:border-[rgb(var(--color-primary))] focus:outline-none focus:ring-4 focus:ring-[rgb(var(--color-primary))]/10 dark:border-slate-700/60 dark:bg-slate-900/60 dark:text-slate-100"
               >
                 <option value="all">All Dates</option>
                 {availableDates.map((date) => (
@@ -151,8 +167,8 @@ export function SearchHistory({ history }: SearchHistoryProps) {
 
           {/* Results Count */}
           <div className="flex items-center justify-between">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Showing {filteredEntries.length} of {totalSearches}{" "}
+            <p className="font-mono text-xs text-slate-600 dark:text-slate-400">
+              {filteredEntries.length} of {totalSearches}{" "}
               {filteredEntries.length === 1 ? "result" : "results"}
             </p>
             {(searchQuery || selectedDate !== "all") && (
@@ -161,7 +177,7 @@ export function SearchHistory({ history }: SearchHistoryProps) {
                   setSearchQuery("");
                   setSelectedDate("all");
                 }}
-                className="text-sm text-[rgb(var(--color-primary))] hover:underline dark:text-[rgb(var(--color-primary-light))]"
+                className="font-body text-sm font-medium text-[rgb(var(--color-primary))] transition-colors hover:text-[rgb(var(--color-primary-dark))] dark:text-[rgb(var(--color-primary-light))]"
               >
                 Clear filters
               </button>
@@ -173,36 +189,40 @@ export function SearchHistory({ history }: SearchHistoryProps) {
             <div className="space-y-6">
               {groupedFilteredEntries.map((group) => (
                 <div key={group.date}>
-                  <h4 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-                    {group.date} ({group.entries.length})
+                  <h4 className="mb-4 flex items-center gap-2 font-display text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    <div className="h-1 w-1 rounded-full bg-[rgb(var(--color-primary))]" />
+                    {group.date}
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                      ({group.entries.length})
+                    </span>
                   </h4>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {group.entries.map((entry) => (
-                      <HistoryCard key={entry.id} entry={entry} />
+                    {group.entries.map((entry, index) => (
+                      <HistoryCard key={entry.id} entry={entry} index={index} />
                     ))}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 p-12 text-center dark:border-slate-700 dark:bg-slate-800/50">
+            <div className="rounded-2xl border-2 border-dashed border-slate-200/60 bg-slate-50/50 p-12 text-center backdrop-blur-sm dark:border-slate-700/60 dark:bg-slate-900/30">
               <svg
-                className="mx-auto h-12 w-12 text-slate-400"
+                className="mx-auto h-12 w-12 text-slate-300 dark:text-slate-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                strokeWidth="1.5"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2}
                   d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <p className="mt-4 text-sm font-medium text-slate-600 dark:text-slate-300">
+              <p className="mt-4 font-body text-sm font-medium text-slate-600 dark:text-slate-400">
                 No searches found
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-500">
                 Try adjusting your filters
               </p>
             </div>
@@ -215,9 +235,10 @@ export function SearchHistory({ history }: SearchHistoryProps) {
 
 type HistoryCardProps = {
   entry: SearchHistoryEntry;
+  index: number;
 };
 
-function HistoryCard({ entry }: HistoryCardProps) {
+function HistoryCard({ entry, index }: HistoryCardProps) {
   const [showForecast, setShowForecast] = useState(false);
   const time = new Date(entry.timestamp).toLocaleTimeString([], {
     hour: "numeric",
@@ -225,71 +246,75 @@ function HistoryCard({ entry }: HistoryCardProps) {
   });
 
   return (
-    <div className="group overflow-hidden rounded-2xl border border-slate-200 bg-white/80 shadow-md backdrop-blur transition hover:shadow-xl dark:border-slate-700 dark:bg-slate-800/80">
+    <div
+      className="glass-card-hover group overflow-hidden rounded-2xl border-2 border-slate-200/60 bg-white/60 backdrop-blur-sm dark:border-slate-700/60 dark:bg-slate-900/60"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
       {/* Main Card Content */}
-      <div className="p-5">
+      <div className="p-6">
         {/* Header with Icon and Location */}
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h5 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+            <h5 className="font-display text-base font-semibold text-slate-900 dark:text-slate-100">
               {entry.city}
-              {entry.country && (
-                <span className="text-slate-500 dark:text-slate-400">
-                  , {entry.country}
-                </span>
-              )}
             </h5>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {entry.country && (
+              <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">
+                {entry.country}
+              </p>
+            )}
+            <p className="mt-2 font-mono text-xs text-slate-400 dark:text-slate-500">
               {time}
             </p>
           </div>
-          <Image
-            src={iconUrl(entry.weather.icon)}
-            alt={entry.weather.description}
-            width={56}
-            height={56}
-            className="h-14 w-14"
-          />
+          <div className="relative">
+            <div className="absolute inset-0 animate-pulse rounded-full bg-[rgb(var(--color-primary))]/10 blur-xl" />
+            <Image
+              src={iconUrl(entry.weather.icon)}
+              alt={entry.weather.description}
+              width={56}
+              height={56}
+              className="relative h-14 w-14"
+              unoptimized
+            />
+          </div>
         </div>
 
         {/* Temperature Display */}
-        <div className="mt-4 rounded-xl bg-gradient-to-br from-[rgb(var(--color-primary-light))]/40 to-[rgb(var(--color-primary))]/20 p-4 dark:from-slate-700/40 dark:to-slate-600/20">
-          <p className="text-xs uppercase tracking-wide text-[rgb(var(--color-primary-dark))] dark:text-[rgb(var(--color-primary-light))]">
-            Temperature
-          </p>
-          <div className="mt-1 flex items-baseline gap-2">
-            <p className="text-3xl font-bold text-slate-900 dark:text-slate-50">
-              {formatTemperature(entry.weather.temperature).c}°C
+        <div className="mt-5 space-y-2 rounded-2xl bg-gradient-to-br from-[rgb(var(--color-primary))]/5 to-transparent p-4">
+          <div className="flex items-baseline gap-2">
+            <p className="font-display text-4xl font-semibold text-slate-900 dark:text-white">
+              {formatTemperature(entry.weather.temperature).c}°
             </p>
-            <p className="text-sm text-slate-600 dark:text-slate-300">
+            <span className="font-mono text-sm text-slate-500 dark:text-slate-400">
               {formatTemperature(entry.weather.temperature).f}°F
-            </p>
+            </span>
           </div>
-          <p className="mt-2 text-sm capitalize text-slate-700 dark:text-slate-200">
+          <p className="font-body text-sm capitalize text-slate-600 dark:text-slate-300">
             {entry.weather.description}
           </p>
         </div>
 
         {/* Weather Details */}
-        <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-          <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-700/50">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Feels</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {formatTemperature(entry.weather.feelsLike).c}°C
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="rounded-xl bg-white/60 p-3 text-center backdrop-blur-sm dark:bg-slate-800/60">
+            <p className="font-mono text-xs text-slate-500 dark:text-slate-400">Feels</p>
+            <p className="mt-1 font-display text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {formatTemperature(entry.weather.feelsLike).c}°
             </p>
           </div>
-          <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-700/50">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Humidity
+          <div className="rounded-xl bg-white/60 p-3 text-center backdrop-blur-sm dark:bg-slate-800/60">
+            <p className="font-mono text-xs text-slate-500 dark:text-slate-400">
+              Humid
             </p>
-            <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <p className="mt-1 font-display text-sm font-semibold text-slate-900 dark:text-slate-100">
               {entry.weather.humidity}%
             </p>
           </div>
-          <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-700/50">
-            <p className="text-xs text-slate-500 dark:text-slate-400">Wind</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {Math.round(entry.weather.windSpeed)}m/s
+          <div className="rounded-xl bg-white/60 p-3 text-center backdrop-blur-sm dark:bg-slate-800/60">
+            <p className="font-mono text-xs text-slate-500 dark:text-slate-400">Wind</p>
+            <p className="mt-1 font-display text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {Math.round(entry.weather.windSpeed)}
             </p>
           </div>
         </div>
@@ -298,21 +323,21 @@ function HistoryCard({ entry }: HistoryCardProps) {
         {entry.forecast.length > 0 && (
           <button
             onClick={() => setShowForecast(!showForecast)}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-200/60 bg-white/40 px-4 py-2.5 font-body text-sm font-medium text-slate-700 backdrop-blur-sm transition-all duration-300 hover:border-[rgb(var(--color-primary))]/60 hover:bg-[rgb(var(--color-primary))]/5 dark:border-slate-700/60 dark:bg-slate-800/40 dark:text-slate-200 dark:hover:bg-[rgb(var(--color-primary))]/10"
           >
             {showForecast ? "Hide" : "View"} Forecast
             <svg
-              className={`h-4 w-4 transition-transform ${
+              className={`h-4 w-4 transition-transform duration-300 ${
                 showForecast ? "rotate-180" : ""
               }`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              strokeWidth="2"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                strokeWidth={2}
                 d="M19 9l-7 7-7-7"
               />
             </svg>
@@ -322,8 +347,9 @@ function HistoryCard({ entry }: HistoryCardProps) {
 
       {/* Expandable Forecast Section */}
       {showForecast && entry.forecast.length > 0 && (
-        <div className="border-t border-slate-200 bg-slate-50/50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+        <div className="border-t-2 border-slate-200/60 bg-slate-50/50 p-4 backdrop-blur-sm dark:border-slate-700/60 dark:bg-slate-950/50">
+          <p className="mb-3 flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-wider text-slate-600 dark:text-slate-400">
+            <div className="h-1 w-1 rounded-full bg-[rgb(var(--color-primary))]" />
             Next Hours
           </p>
           <div className="grid grid-cols-5 gap-2">
@@ -334,12 +360,11 @@ function HistoryCard({ entry }: HistoryCardProps) {
               return (
                 <div
                   key={forecast.dt}
-                  className="flex flex-col items-center rounded-lg bg-white p-2 dark:bg-slate-800"
+                  className="flex flex-col items-center rounded-xl bg-white/60 p-2 backdrop-blur-sm transition-transform hover:scale-105 dark:bg-slate-900/60"
                 >
-                  <p className="text-xs text-slate-600 dark:text-slate-300">
+                  <p className="font-mono text-xs text-slate-600 dark:text-slate-400">
                     {date.toLocaleTimeString([], {
                       hour: "numeric",
-                      minute: "2-digit",
                     })}
                   </p>
                   <Image
@@ -348,9 +373,10 @@ function HistoryCard({ entry }: HistoryCardProps) {
                     width={32}
                     height={32}
                     className="my-1 h-8 w-8"
+                    unoptimized
                   />
-                  <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">
-                    {temps.c}°C
+                  <p className="font-display text-xs font-semibold text-slate-900 dark:text-slate-100">
+                    {temps.c}°
                   </p>
                 </div>
               );

@@ -1,76 +1,297 @@
 @import "tailwindcss";
+
 /* Enable class-driven dark mode in Tailwind CSS v4 */
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ============================================
+   APPLE-INSPIRED DESIGN SYSTEM
+   Meteorology Lab Aesthetic
+   ============================================ */
 
-  /* Default theme: Blue */
+:root {
+  /* Background & Foreground */
+  --background: #fafafa;
+  --foreground: #1c1c1e;
+
+  /* Apple-style elevation system */
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --elevation-2: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.03);
+  --elevation-3: 0 10px 15px rgba(0, 0, 0, 0.06), 0 4px 6px rgba(0, 0, 0, 0.04);
+  --elevation-4: 0 20px 25px rgba(0, 0, 0, 0.08), 0 8px 10px rgba(0, 0, 0, 0.05);
+
+  /* Glass morphism effects */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-blur: blur(20px);
+
+  /* Atmospheric gradient */
+  --gradient-sky-start: #e0f2fe;
+  --gradient-sky-mid: #bae6fd;
+  --gradient-sky-end: #7dd3fc;
+
+  /* Default theme: Blue (Sky) */
   --color-primary: 14 165 233; /* sky-500 */
-  --color-primary-light: 240 249 255; /* sky-50 */
-  --color-primary-dark: 3 105 161; /* sky-700 */
+  --color-primary-light: 56 189 248; /* sky-400 */
+  --color-primary-dark: 2 132 199; /* sky-600 */
+  --color-accent: 14 165 233;
 }
 
 :root.theme-green {
   --color-primary: 34 197 94; /* green-500 */
-  --color-primary-light: 240 253 244; /* green-50 */
-  --color-primary-dark: 21 128 61; /* green-700 */
+  --color-primary-light: 74 222 128; /* green-400 */
+  --color-primary-dark: 22 163 74; /* green-600 */
+  --color-accent: 34 197 94;
+  --gradient-sky-start: #d1fae5;
+  --gradient-sky-mid: #a7f3d0;
+  --gradient-sky-end: #6ee7b7;
 }
 
 :root.theme-rose {
   --color-primary: 244 63 94; /* rose-500 */
-  --color-primary-light: 255 241 242; /* rose-50 */
-  --color-primary-dark: 190 18 60; /* rose-700 */
+  --color-primary-light: 251 113 133; /* rose-400 */
+  --color-primary-dark: 225 29 72; /* rose-600 */
+  --color-accent: 244 63 94;
+  --gradient-sky-start: #ffe4e6;
+  --gradient-sky-mid: #fecdd3;
+  --gradient-sky-end: #fda4af;
 }
 
 :root.theme-amber {
   --color-primary: 245 158 11; /* amber-500 */
-  --color-primary-light: 255 251 235; /* amber-50 */
-  --color-primary-dark: 180 83 9; /* amber-700 */
+  --color-primary-light: 251 191 36; /* amber-400 */
+  --color-primary-dark: 217 119 6; /* amber-600 */
+  --color-accent: 245 158 11;
+  --gradient-sky-start: #fef3c7;
+  --gradient-sky-mid: #fde68a;
+  --gradient-sky-end: #fcd34d;
 }
 
 :root.theme-violet {
   --color-primary: 139 92 246; /* violet-500 */
-  --color-primary-light: 245 243 255; /* violet-50 */
-  --color-primary-dark: 109 40 217; /* violet-700 */
+  --color-primary-light: 167 139 250; /* violet-400 */
+  --color-primary-dark: 124 58 237; /* violet-600 */
+  --color-accent: 139 92 246;
+  --gradient-sky-start: #ede9fe;
+  --gradient-sky-mid: #ddd6fe;
+  --gradient-sky-end: #c4b5fd;
 }
 
-/* New Pink theme */
 :root.theme-pink {
   --color-primary: 236 72 153; /* pink-500 */
-  --color-primary-light: 253 242 248; /* pink-50 */
-  --color-primary-dark: 190 24 93; /* pink-700 */
+  --color-primary-light: 244 114 182; /* pink-400 */
+  --color-primary-dark: 219 39 119; /* pink-600 */
+  --color-accent: 236 72 153;
+  --gradient-sky-start: #fce7f3;
+  --gradient-sky-mid: #fbcfe8;
+  --gradient-sky-end: #f9a8d4;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
   --color-primary: var(--color-primary);
   --color-primary-light: var(--color-primary-light);
   --color-primary-dark: var(--color-primary-dark);
 }
 
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #000000;
+  --foreground: #f5f5f7;
+
+  /* Dark mode elevation */
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --elevation-2: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --elevation-3: 0 10px 15px rgba(0, 0, 0, 0.5), 0 4px 6px rgba(0, 0, 0, 0.4);
+  --elevation-4: 0 20px 25px rgba(0, 0, 0, 0.6), 0 8px 10px rgba(0, 0, 0, 0.5);
+
+  /* Dark glass morphism */
+  --glass-bg: rgba(29, 29, 31, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.08);
+
+  /* Dark atmospheric gradient */
+  --gradient-sky-start: #0f172a;
+  --gradient-sky-mid: #1e293b;
+  --gradient-sky-end: #334155;
 }
 
 .light {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #1c1c1e;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --foreground: #f5f5f7;
   }
 }
 
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
 body {
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--background);
+  font-family: var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-feature-settings: 'liga' 1, 'kern' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Typography scale */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ============================================
+   NOISE TEXTURE OVERLAY
+   ============================================ */
+
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, 35%); }
+  90% { transform: translate(-10%, 10%); }
+}
+
+.noise-overlay {
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  width: 200%;
+  height: 200vh;
+  background: transparent url('data:image/svg+xml;utf8,<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>') repeat;
+  pointer-events: none;
+  opacity: 0.6;
+  animation: grain 8s steps(10) infinite;
+  z-index: 1;
+}
+
+/* ============================================
+   GLASS CARD SYSTEM
+   ============================================ */
+
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--elevation-3);
+}
+
+.glass-card-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-4);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Staggered animations */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* ============================================
+   CUSTOM SCROLLBAR (WebKit)
+   ============================================ */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--color-primary), 0.3);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--color-primary), 0.5);
+  background-clip: padding-box;
+}
+
+/* ============================================
+   FOCUS STYLES
+   ============================================ */
+
+*:focus-visible {
+  outline: 2px solid rgb(var(--color-primary));
+  outline-offset: 2px;
 }
